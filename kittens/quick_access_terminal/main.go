@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"kitty/kittens/panel"
-	"kitty/tools/cli"
-	"kitty/tools/config"
+	"github.com/kovidgoyal/kitty/kittens/panel"
+	"github.com/kovidgoyal/kitty/tools/cli"
+	"github.com/kovidgoyal/kitty/tools/config"
 
 	"golang.org/x/sys/unix"
 )
@@ -73,6 +73,9 @@ func main(cmd *cli.Command, opts *Options, args []string) (rc int, err error) {
 	argv = append(argv, fmt.Sprintf("--focus-policy=%s", conf.Focus_policy))
 	if conf.Start_as_hidden {
 		argv = append(argv, `--start-as-hidden`)
+	}
+	if conf.Grab_keyboard {
+		argv = append(argv, `--grab-keyboard`)
 	}
 	if conf.Hide_on_focus_loss {
 		argv = append(argv, `--hide-on-focus-loss`)

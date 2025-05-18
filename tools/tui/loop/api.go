@@ -13,10 +13,10 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"kitty/tools/tty"
-	"kitty/tools/utils"
-	"kitty/tools/utils/style"
-	"kitty/tools/wcswidth"
+	"github.com/kovidgoyal/kitty/tools/tty"
+	"github.com/kovidgoyal/kitty/tools/utils"
+	"github.com/kovidgoyal/kitty/tools/utils/style"
+	"github.com/kovidgoyal/kitty/tools/wcswidth"
 )
 
 type ScreenSize struct {
@@ -121,6 +121,9 @@ type Loop struct {
 
 	// Called when the terminal's color scheme changes
 	OnColorSchemeChange func(ColorPreference) error
+
+	// Called on focus in/out events
+	OnFocusChange func(bool) error
 }
 
 func New(options ...func(self *Loop)) (*Loop, error) {

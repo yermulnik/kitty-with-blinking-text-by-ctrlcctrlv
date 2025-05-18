@@ -16,8 +16,8 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"kitty/tools/tty"
-	"kitty/tools/utils"
+	"github.com/kovidgoyal/kitty/tools/tty"
+	"github.com/kovidgoyal/kitty/tools/utils"
 )
 
 var SIGNULL unix.Signal
@@ -113,6 +113,12 @@ func (self *Loop) handle_csi(raw []byte) (err error) {
 				return nil
 			}
 		}
+	} else if csi == "I" || csi == "O" {
+		if self.OnFocusChange != nil {
+			return self.OnFocusChange(csi == "I")
+		}
+		return nil
+
 	}
 	ke := KeyEventFromCSI(csi)
 	if ke != nil {

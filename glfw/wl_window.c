@@ -47,6 +47,18 @@ static bool
 is_layer_shell(_GLFWwindow *window) { return window->wl.layer_shell.config.type != GLFW_LAYER_SHELL_NONE; }
 
 static void
+inhibit_shortcuts_for(_GLFWwindow *window, bool inhibit) {
+    if (inhibit) {
+        if (window->wl.keyboard_shortcuts_inhibitor) return;
+        window->wl.keyboard_shortcuts_inhibitor = zwp_keyboard_shortcuts_inhibit_manager_v1_inhibit_shortcuts(_glfw.wl.keyboard_shortcuts_inhibit_manager, window->wl.surface, _glfw.wl.seat);
+    } else {
+        if (!window->wl.keyboard_shortcuts_inhibitor) return;
+        zwp_keyboard_shortcuts_inhibitor_v1_destroy(window->wl.keyboard_shortcuts_inhibitor);
+        window->wl.keyboard_shortcuts_inhibitor = NULL;
+    }
+}
+
+static void
 activation_token_done(void *data, struct xdg_activation_token_v1 *xdg_token, const char *token) {
     for (size_t i = 0; i < _glfw.wl.activation_requests.sz; i++) {
         glfw_wl_xdg_activation_request *r = _glfw.wl.activation_requests.array + i;
@@ -616,6 +628,7 @@ static bool createSurface(_GLFWwindow* window,
     update_regions(window);
 
     wl_surface_set_buffer_scale(window->wl.surface, scale);
+    if (_glfw.keyboard_grabbed) inhibit_shortcuts_for(window, true);
     return true;
 }
 
@@ -1144,7 +1157,7 @@ create_layer_shell_surface(_GLFWwindow *window) {
     struct wl_output *wl_output = find_output_by_name(window->wl.layer_shell.config.output_name);
 #define ls window->wl.layer_shell.zwlr_layer_surface_v1
     ls = zwlr_layer_shell_v1_get_layer_surface(
-            _glfw.wl.zwlr_layer_shell_v1, window->wl.surface, wl_output, get_layer_shell_layer(window), "kitty");
+            _glfw.wl.zwlr_layer_shell_v1, window->wl.surface, wl_output, get_layer_shell_layer(window), window->wl.appId[0] ? window->wl.appId : "kitty");
     if (!ls) {
         _glfwInputError(GLFW_PLATFORM_ERROR, "Wayland: layer-surface creation failed");
         return false;
@@ -1469,6 +1482,8 @@ void _glfwPlatformDestroyWindow(_GLFWwindow* window)
     if (window->id == _glfw.wl.keyRepeatInfo.keyboardFocusId) {
         _glfw.wl.keyRepeatInfo.keyboardFocusId = 0;
     }
+    if (window->wl.keyboard_shortcuts_inhibitor)
+        zwp_keyboard_shortcuts_inhibitor_v1_destroy(window->wl.keyboard_shortcuts_inhibitor);
 
     if (window->wl.temp_buffer_used_during_window_creation)
         wl_buffer_destroy(window->wl.temp_buffer_used_during_window_creation);
@@ -2818,6 +2833,16 @@ _glfwPlatformSetWindowBlur(_GLFWwindow *window, int blur_radius) {
         update_regions(window);
     }
     return has_blur ? 1 : 0;
+}
+
+bool
+_glfwPlatformGrabKeyboard(bool grab) {
+    if (!_glfw.wl.keyboard_shortcuts_inhibit_manager) {
+        _glfwInputError(GLFW_PLATFORM_ERROR, "The Wayland compositor does not implement inhibit-keyboard-shortcuts, cannot grab keyboard");
+        return false;
+    }
+    for (_GLFWwindow* window = _glfw.windowListHead; window; window = window->next) inhibit_shortcuts_for(window, grab);
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////

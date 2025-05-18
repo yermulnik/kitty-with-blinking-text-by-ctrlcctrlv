@@ -5,7 +5,7 @@ import sys
 
 from kitty.conf.types import Definition
 from kitty.constants import appname
-from kitty.simple_cli_definitions import CONFIG_HELP
+from kitty.simple_cli_definitions import CONFIG_HELP, grab_keyboard_docs
 
 help_text = 'A quick access terminal window that you can bring up instantly with a keypress or a command.'
 
@@ -45,6 +45,8 @@ Hide the window when it loses keyboard focus automatically. Using this option
 will force :opt:`focus_policy` to :code:`on-demand`.
 ''')
 
+opt('grab_keyboard', 'no', option_type='to_bool', long_text=grab_keyboard_docs)
+
 opt('margin_left', '0', option_type='int',
     long_text='Set the left margin for the window, in pixels. Has no effect for windows on the right edge of the screen.')
 
@@ -67,7 +69,8 @@ opt('+kitty_override', '', long_text='Override individual kitty configuration op
 )
 
 opt('app_id', f'{appname}-quick-access',
-    long_text='The Wayland APP_ID assigned to the quick access window (Linux only)')
+    long_text='On Wayland set the :italic:`namespace` of the layer shell surface.'
+    ' On X11 set the WM_CLASS assigned to the quick access window. (Linux only)')
 
 
 opt('output_name', '', long_text='''
